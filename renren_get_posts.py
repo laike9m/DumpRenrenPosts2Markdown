@@ -1,7 +1,6 @@
 import requests
 import os
 import lxml.html as html
-import cssselect
 import pickle
 
 HTML_DIR = 'original html'
