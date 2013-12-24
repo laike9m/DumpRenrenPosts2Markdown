@@ -46,9 +46,10 @@ class Get_Blogpost(LoginRenRen):
         self.test_post_url = 'http://blog.renren.com/blog/282456584/863989702'  
         # 日志《《世界羽联的运动员行为条例》，先看看原文再说话》
 
+
     def get_test_post(self):
         r = self.s.get(self.test_post_url)
-        with open(os.path.join(DUMP_DIR,'test_post.html'), mode='w', encoding='utf-8') as f:
+        with open('test_post.html', 'wt', encoding='utf-8') as f:
             f.write(r.text)  
     
     
@@ -76,7 +77,9 @@ class Get_Blogpost(LoginRenRen):
                 self.output_html(text=r.text, filename=str(i)+'.'+next_blog_title)
             except:
                 print("Unexpected error:", sys.exc_info()[0])
+                print('Existing program...')
                 break
+              
               
 if __name__=='__main__':
     0 if os.path.exists(HTML_DIR) else os.mkdir(HTML_DIR)
