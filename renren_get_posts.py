@@ -1,7 +1,8 @@
 import requests
-import os
+import os,sys
 import lxml.html as html
 import pickle
+import re
 
 HTML_DIR = 'original html'
 DUMP_DIR = 'markdown'
@@ -32,6 +33,7 @@ class LoginRenRen():
         print('login.....')  
         
         print(r.url)
+        self.user_url = r.url
         self.main_page = r.text
 
 
@@ -51,24 +53,29 @@ class Get_Blogpost(LoginRenRen):
     
     
     def get_posts_list(self):
-        self.s.get("http://www.renren.com/282456584/profile")   # person page
-        r = self.s.get("http://www.renren.com/282456584/profile?v=blog_ajax&undefined") # rizhi tab
-        self.output_html(r.text, 'pre')
+        profile_page = self.user_url + '/profile'
+        self.s.get(profile_page)
+        rizhi_tab = profile_page + '?v=blog_ajax&undefined'
+        r = self.s.get(rizhi_tab)
+        #self.output_html(text=r.text, filename='pre')
         first_blog_url = html.fromstring(r.text).cssselect('[stats="blog_blog"]')[0].attrib['href']
         first_blog_title = html.fromstring(r.text).cssselect('[stats="blog_blog"]')[0].text
         r = self.s.get(first_blog_url)
         print("Generating 《%s》" % first_blog_title)
-        self.output_html(r.text, 'post_0')
+        self.output_html(text=r.text, filename='0.'+first_blog_title)
         
         # 先弄100篇, 之后可根据状态码或页面元素判断已到末尾
-        for i in range(1000):
+        for i in range(1,1000):
             try:
                 next_blog_url = html.fromstring(r.text).cssselect(".a-nav .float-right a")[0].attrib['href']
-                next_blog_title = html.fromstring(r.text).cssselect(".a-nav .float-right a")[0].text
+                next_blog_title = html.fromstring(r.text).cssselect(".a-nav .float-right a")[0].text.lstrip('较旧一篇:')
                 r = self.s.get(next_blog_url)
                 print("Generating 《%s》" % next_blog_title)
-                self.output_html(r.text, 'post_'+str(i))
+                next_blog_title = re.sub(r'[<>"*\\/|?]', '', next_blog_title)   # 标题中的? -> '',: -> -
+                next_blog_title = re.sub(':', '-', next_blog_title)
+                self.output_html(text=r.text, filename=str(i)+'.'+next_blog_title)
             except:
+                print("Unexpected error:", sys.exc_info()[0])
                 break
               
 if __name__=='__main__':
