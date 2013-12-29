@@ -3,6 +3,7 @@ import os,sys
 import lxml.html as html
 import pickle
 import re
+import getpass
 
 HTML_DIR = 'original html'
 DUMP_DIR = 'markdown'
@@ -66,7 +67,7 @@ class Get_Blogpost(LoginRenRen):
         self.output_html(text=r.text, filename='0.'+first_blog_title)
         
         # 先弄100篇, 之后可根据状态码或页面元素判断已到末尾
-        for i in range(1,1000):
+        for i in range(1,10000):
             try:
                 next_blog_url = html.fromstring(r.text).cssselect(".a-nav .float-right a")[0].attrib['href']
                 next_blog_title = html.fromstring(r.text).cssselect(".a-nav .float-right a")[0].text.lstrip('较旧一篇:')
@@ -86,17 +87,21 @@ if __name__=='__main__':
     0 if os.path.exists(DUMP_DIR) else os.mkdir(DUMP_DIR)
     
     domain = 'renren.com' 
+    
     if os.path.exists('personal_info'):
         username, password = pickle.load(open('personal_info', 'rb'))
     else:  
         username = input('请输入用户名: ')
-        password = input('请输入密码: ')
-        pickle.dump((username, password), open('personal_info', 'wb'))
+        password = getpass.getpass('请输入密码: ')
         
     #ren = LoginRenRen(username, password, domain)  
     #ren.login()
     
     ren_get_blogpost = Get_Blogpost(username, password, domain)
-    ren_get_blogpost.login()
-    ren_get_blogpost.get_posts_list()
+    try:
+        ren_get_blogpost.login()
+        ren_get_blogpost.get_posts_list()
+        pickle.dump((username, password), open('personal_info', 'wb'))
+    except:
+        print("用户名或密码错误, 程序终止")
     
