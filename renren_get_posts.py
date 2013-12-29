@@ -36,6 +36,7 @@ class LoginRenRen():
         print(r.url)
         self.user_url = r.url
         self.main_page = r.text
+        self.output_html(text=r.text, filename='main_page') # step 1
 
 
 class Get_Blogpost(LoginRenRen):
@@ -56,17 +57,20 @@ class Get_Blogpost(LoginRenRen):
     
     def get_posts_list(self):
         profile_page = self.user_url + '/profile'
-        self.s.get(profile_page)
+        r = self.s.get(profile_page)
+        self.output_html(text=r.text, filename='profilepage')   # step 2
+        
         rizhi_tab = profile_page + '?v=blog_ajax&undefined'
         r = self.s.get(rizhi_tab)
-        #self.output_html(text=r.text, filename='pre')
+        self.output_html(text=r.text, filename='rizhi_tab')   # step 3 
+        
         first_blog_url = html.fromstring(r.text).cssselect('[stats="blog_blog"]')[0].attrib['href']
         first_blog_title = html.fromstring(r.text).cssselect('[stats="blog_blog"]')[0].text
         r = self.s.get(first_blog_url)
         print("Generating 《%s》" % first_blog_title)
         self.output_html(text=r.text, filename='0.'+first_blog_title)
         
-        # 先弄100篇, 之后可根据状态码或页面元素判断已到末尾
+        # 根据状态码或页面元素判断已到末尾
         for i in range(1,10000):
             try:
                 next_blog_url = html.fromstring(r.text).cssselect(".a-nav .float-right a")[0].attrib['href']
@@ -99,7 +103,7 @@ if __name__=='__main__':
     
     ren_get_blogpost = Get_Blogpost(username, password, domain)
     try:
-        ren_get_blogpost.login()
+        ren_get_blogpost.login()    
         ren_get_blogpost.get_posts_list()
         pickle.dump((username, password), open('personal_info', 'wb'))
     except:
