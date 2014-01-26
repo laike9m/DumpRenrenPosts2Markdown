@@ -1,4 +1,4 @@
-'''
+"""
 把每篇日志的html清理成只包含日志标题,正文,修改时间,分类,(评论)
 识别:
 <h3 class="title-article">
@@ -11,7 +11,7 @@
 </div>
 
 从这里提取信息
-'''
+"""
 
 import lxml.html as html
 import os
@@ -21,21 +21,22 @@ import glob
 HTML_DIR = 'original html'
 DUMP_DIR = 'markdown'
 
+
 class Convert():
     def __init__(self):
-        pass
+        self.html_list = None
     
     def get_html_list(self):
         self.html_list = glob.glob(os.path.join(HTML_DIR, '*.html'))
-        
-    
-    def get_title(self, text):
+
+    @staticmethod
+    def get_title(text):
         blog_page = html.fromstring(text)
         title = blog_page.cssselect('.title-article strong')[0].text
         return title
-    
-    
-    def stringify_children(self, node):
+
+    @staticmethod
+    def stringify_children(node):
         from lxml.etree import tostring
         from itertools import chain
         parts = ([node.text] +
@@ -44,7 +45,6 @@ class Convert():
         # filter removes possible Nones in texts and tails
         return ''.join(filter(None, parts))
 
-    
     def get_content(self, text):
         blog_page = html.fromstring(text)
         content = blog_page.cssselect('#blogContent')[0]
@@ -54,20 +54,19 @@ class Convert():
         #http://stackoverflow.com/questions/4624062/get-all-text-inside-a-tag-in-lxml#
         #http://stackoverflow.com/questions/6123351/equivalent-to-innerhtml-when-using-lxml-html-to-parse-html?lq=1
         return content
-    
-    
-    def get_tag(self, text):
+
+    @staticmethod
+    def get_tag(text):
         blog_page = html.fromstring(text)
         tag = blog_page.cssselect('.title-article .group a')[0].text
         return tag
     
-
-    def get_timestamp(self, text):
+    @staticmethod
+    def get_timestamp(text):
         blog_page = html.fromstring(text)
         timestamp = blog_page.cssselect('.timestamp')[0].text
         return timestamp
     
-        
     def write2md(self):
         for file in self.html_list:
             with open(file, 'rt', encoding='utf-8') as f:
@@ -76,7 +75,7 @@ class Convert():
                 content = self.get_content(text)
                 tag = self.get_tag(text)
                 timestamp = self.get_timestamp(text)
-                lines = [title,'\n',timestamp,'\n',content,'\n',tag]
+                lines = [title, '\n', timestamp, '\n', content, '\n', tag]
                 filename = os.path.splitext(os.path.split(file))[0]
                 with open(os.path.join(DUMP_DIR, filename), 'wt', encoding='utf-8') as md:
                     md.writelines(lines)

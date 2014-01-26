@@ -1,5 +1,6 @@
 import requests
-import os,sys
+import os
+import sys
 import lxml.html as html
 import pickle
 import re
@@ -8,18 +9,20 @@ import getpass
 HTML_DIR = 'original html'
 DUMP_DIR = 'markdown'
 
+
 class LoginRenRen():  
     
     s = requests.Session() 
       
-    def __init__(self,name='',password='',domain=''):  
-        self.name=name  
-        self.password=password  
-        self.domain=domain  
-    
-    def output_html(self, text, filename):
+    def __init__(self, name='', password='', domain=''):
+        self.name = name
+        self.password = password
+        self.domain = domain
+
+    @staticmethod
+    def output_html(text, filename):
         filename += '.html'
-        with open(os.path.join(HTML_DIR,filename), mode='w', encoding='utf-8') as f:
+        with open(os.path.join(HTML_DIR, filename), mode='w', encoding='utf-8') as f:
             f.write(text)
           
     def login(self):  
@@ -27,34 +30,30 @@ class LoginRenRen():
         
         r = self.s.post(  
             'http://www.renren.com/PLogin.do',  
-            data = params,
-            allow_redirects = True,
+            data=params,
+            allow_redirects=True,
         )  
 
         print('login.....')  
         
         print(r.url)
-        self.user_url = r.url
-        self.main_page = r.text
-        self.output_html(text=r.text, filename='main_page') # step 1
+        self.output_html(text=r.text, filename='main_page')  # step 1
 
 
-class Get_Blogpost(LoginRenRen):
+class GetBlogpost(LoginRenRen):
     
     def __init__(self, name, password, domain):
-        self.name=name  
-        self.password=password  
-        self.domain=domain  
+        self.name = name
+        self.password = password
+        self.domain = domain
         self.test_post_url = 'http://blog.renren.com/blog/282456584/863989702'  
         # 日志《《世界羽联的运动员行为条例》，先看看原文再说话》
-
 
     def get_test_post(self):
         r = self.s.get(self.test_post_url)
         with open('test_post.html', 'wt', encoding='utf-8') as f:
             f.write(r.text)  
-    
-    
+
     def get_posts_list(self):
         profile_page = self.user_url + '/profile'
         r = self.s.get(profile_page)
@@ -71,7 +70,7 @@ class Get_Blogpost(LoginRenRen):
         self.output_html(text=r.text, filename='0.'+first_blog_title)
         
         # 根据状态码或页面元素判断已到末尾
-        for i in range(1,10000):
+        for i in range(1, 10000):
             try:
                 next_blog_url = html.fromstring(r.text).cssselect(".a-nav .float-right a")[0].attrib['href']
                 next_blog_title = html.fromstring(r.text).cssselect(".a-nav .float-right a")[0].text.lstrip('较旧一篇:')
@@ -85,27 +84,30 @@ class Get_Blogpost(LoginRenRen):
                 print('Existing program...')
                 break
               
-              
-if __name__=='__main__':
+
+def main():
     0 if os.path.exists(HTML_DIR) else os.mkdir(HTML_DIR)
     0 if os.path.exists(DUMP_DIR) else os.mkdir(DUMP_DIR)
-    
-    domain = 'renren.com' 
-    
+
+    domain = 'renren.com'
+
     if os.path.exists('personal_info'):
         username, password = pickle.load(open('personal_info', 'rb'))
-    else:  
+    else:
         username = input('请输入用户名: ')
         password = getpass.getpass('请输入密码: ')
-        
-    #ren = LoginRenRen(username, password, domain)  
+
+    #ren = LoginRenRen(username, password, domain)
     #ren.login()
-    
-    ren_get_blogpost = Get_Blogpost(username, password, domain)
+
+    ren_get_blogpost = GetBlogpost(username, password, domain)
     try:
-        ren_get_blogpost.login()    
+        ren_get_blogpost.login()
         ren_get_blogpost.get_posts_list()
         pickle.dump((username, password), open('personal_info', 'wb'))
     except:
         print("用户名或密码错误, 程序终止")
-    
+
+
+if __name__ == '__main__':
+    main()
