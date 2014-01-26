@@ -16,10 +16,29 @@
 import lxml.html as html
 import os
 import glob
+import re
+from lxml import etree
+from html.parser import HTMLParser
 
 
 HTML_DIR = 'original html'
 DUMP_DIR = 'markdown'
+
+
+class GetElement():
+
+    def __init__(self, text, css):
+        self.text = text
+        self.css = css
+
+    def __enter__(self):
+        blog_page = html.fromstring(self.text)
+        result = blog_page.cssselect(self.css)
+        element = result[0].text if result else None
+        return element
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
 
 
 class Convert():
@@ -31,57 +50,56 @@ class Convert():
 
     @staticmethod
     def get_title(text):
-        blog_page = html.fromstring(text)
-        title = blog_page.cssselect('.title-article strong')[0].text
-        return title
+        with GetElement(text, '.title-article strong') as title:
+            return title
 
     @staticmethod
-    def stringify_children(node):
-        from lxml.etree import tostring
-        from itertools import chain
-        parts = ([node.text] +
-                list(chain(*([tostring(c)] for c in node.getchildren()))) +
-                [node.tail])
-        # filter removes possible Nones in texts and tails
-        return ''.join(filter(None, parts))
-
-    def get_content(self, text):
+    def get_body(text):
         blog_page = html.fromstring(text)
-        content = blog_page.cssselect('#blogContent')[0]
-        content = self.stringify_children(content)
-        #有待进一步研究
-        #http://stackoverflow.com/questions/11938924/parsing-utf-8-unicode-strings-with-lxml-html
-        #http://stackoverflow.com/questions/4624062/get-all-text-inside-a-tag-in-lxml#
-        #http://stackoverflow.com/questions/6123351/equivalent-to-innerhtml-when-using-lxml-html-to-parse-html?lq=1
-        return content
+        result = blog_page.cssselect('#blogContent')
+        if result:
+            blogcontent_div = blog_page.cssselect('#blogContent')[0]
+            h = HTMLParser()
+            body_text = h.unescape(etree.tostring(blogcontent_div).decode('utf-8'))
+            return body_text
+        else:
+            return None
 
     @staticmethod
     def get_tag(text):
-        blog_page = html.fromstring(text)
-        tag = blog_page.cssselect('.title-article .group a')[0].text
-        return tag
+        with GetElement(text, '.title-article .group a') as tag:
+            return tag
     
     @staticmethod
     def get_timestamp(text):
-        blog_page = html.fromstring(text)
-        timestamp = blog_page.cssselect('.timestamp')[0].text
-        return timestamp
-    
+        with GetElement(text, '.timestamp') as timestamp:
+            return timestamp
+
     def write2md(self):
+        count = 0
         for file in self.html_list:
             with open(file, 'rt', encoding='utf-8') as f:
                 text = f.read()
                 title = self.get_title(text)
-                content = self.get_content(text)
                 tag = self.get_tag(text)
                 timestamp = self.get_timestamp(text)
-                lines = [title, '\n', timestamp, '\n', content, '\n', tag]
-                filename = os.path.splitext(os.path.split(file))[0]
-                with open(os.path.join(DUMP_DIR, filename), 'wt', encoding='utf-8') as md:
-                    md.writelines(lines)
+                content = self.get_body(text)
+                if all((text, title, timestamp, content)):
+                    lines = [title, '\n', timestamp, '\n', content, '\n', tag]
+                    print(title + " finished, {0} converted".format(count))
+                    count += 1
+                    title = re.sub(r'[<>"*\\/|?]', '', title)
+                    title = re.sub(':', '-', title)
+                    filename = os.path.basename(file).split('.')[0] + ".{0}.md".format(title)  # num.title
+                    with open(os.path.join(DUMP_DIR, filename), 'wt', encoding='utf-8') as md:
+                        md.writelines(lines)
 
 
-if __name__ == '__main__':
+def main():
     c = Convert()
     c.get_html_list()
     c.write2md()
+
+
+if __name__ == '__main__':
+    main()
