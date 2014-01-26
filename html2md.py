@@ -1,3 +1,4 @@
+# -*- coding:utf-8 -*-
 """
 把每篇日志的html清理成只包含日志标题,正文,修改时间,分类,(评论)
 识别:
@@ -17,6 +18,7 @@ import lxml.html as html
 import os
 import glob
 import re
+import sys
 from lxml import etree
 from html.parser import HTMLParser
 
@@ -86,7 +88,10 @@ class Convert():
                 content = self.get_body(text)
                 if all((text, title, timestamp, content)):
                     lines = [title, '\n', timestamp, '\n', content, '\n', tag]
-                    print(title + " finished, {0} converted".format(count))
+                    if sys.stdout.encoding == 'UTF-8':
+                        print(title + " finished, {0} converted".format(count))
+                    else:
+                        print(count)
                     count += 1
                     title = re.sub(r'[<>"*\\/|?]', '', title)
                     title = re.sub(':', '-', title)
@@ -95,11 +100,7 @@ class Convert():
                         md.writelines(lines)
 
 
-def main():
+if __name__ == '__main__':
     c = Convert()
     c.get_html_list()
     c.write2md()
-
-
-if __name__ == '__main__':
-    main()
