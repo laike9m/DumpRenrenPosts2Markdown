@@ -85,9 +85,9 @@ class Convert():
                 title = self.get_title(text)
                 tag = self.get_tag(text)
                 timestamp = self.get_timestamp(text)
-                content = self.get_body(text)
-                if all((text, title, timestamp, content)):
-                    lines = [title, '\n', timestamp, '\n', content, '\n', tag]
+                body = self.get_body(text)
+                if all((text, title, timestamp, body)):
+                    lines = [title, '\n', timestamp, '\n', tag, '\n', body]
                     if sys.stdout.encoding == 'UTF-8':
                         print(title + " finished, {0} converted".format(count))
                     else:
