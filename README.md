@@ -4,7 +4,7 @@ DumpRenrenPosts2Markdown
 Dump Renren Posts to Markdown/html
 
 
-Require:  
+### Require  
 
 [Requests](http://docs.python-requests.org/en/latest/ "")  
 
@@ -12,8 +12,12 @@ Require:
 
 [cssselect](http://pythonhosted.org/cssselect/ "")
 
+### Usage
+```bash
+$ renren_get_posts.py
+```
 
-**Note**:   
+### Note:   
 
 * HTML tags will NOT be converted to markdown syntax but remain unchanged.
 * This tool is currently Python 3 only, however it's easy to make it compatible with Python 2 if you like.
